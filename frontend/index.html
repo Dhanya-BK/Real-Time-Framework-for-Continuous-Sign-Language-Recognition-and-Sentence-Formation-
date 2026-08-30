@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Signa — Where Signs Speak</title>
+<style>
+  :root {
+    --purple: #8b7cf6;
+    --purple-dark: #6d5bd0;
+    --bg: #fdf6f0;
+    --green: #22c55e;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --gray: #6b7280;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); overflow: hidden; }
+  #app { max-width: 480px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; position: relative; background: #fff; }
+  .screen { display: none; flex-direction: column; height: 100%; padding: 24px; animation: fadeIn 0.25s ease; overflow-y: auto; }
+  .screen.active { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  #splash { align-items: center; justify-content: center; text-align: center; background: linear-gradient(160deg, #fdf1e7, #f3e8ff); }
+  .logo-icon { width: 96px; height: 96px; background: linear-gradient(135deg, var(--purple), var(--purple-dark)); border-radius: 24px; display: flex; align-items: center; justify-content: center; font-size: 44px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(139,124,246,0.35); }
+  .logo-title { font-size: 32px; font-weight: 700; color: #2d2d3a; }
+  .logo-sub { font-size: 15px; color: var(--gray); margin-top: 6px; }
+  .spinner { margin-top: 40px; width: 32px; height: 32px; border: 3px solid #e9e0ff; border-top-color: var(--purple); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .topbar .dot { width: 20px; height: 20px; border-radius: 6px; background: var(--purple); cursor: pointer; }
+
+  .camera-box { flex: 1; background: #f3f0fa; border-radius: 20px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 300px; }
+  .camera-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+  .camera-off-msg { text-align: center; color: var(--gray); }
+  .camera-off-msg .icon { font-size: 40px; margin-bottom: 10px; }
+  .rec-badge { position: absolute; top: 14px; left: 14px; background: #dc2626; color: #fff; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 20px; display: flex; align-items: center; gap: 6px; z-index: 5; }
+  .rec-badge .blink { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: 0.2; } }
+
+  .controls { display: flex; gap: 12px; margin: 18px 0 12px; }
+  .ctrl-btn { flex: 1; border: none; border-radius: 14px; padding: 14px 0; font-size: 13px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; color: #fff; transition: transform 0.1s; }
+  .ctrl-btn:active { transform: scale(0.96); }
+  .ctrl-btn.start { background: var(--green); }
+  .ctrl-btn.pause { background: #e5e7eb; color: #4b5563; }
+  .ctrl-btn.stop { background: var(--red); }
+  .ctrl-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .generate-btn { width: 100%; padding: 14px; border-radius: 14px; border: none; background: #e9e4fb; color: #8b7cf6; font-weight: 600; font-size: 15px; margin-bottom: 14px; cursor: pointer; }
+  .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .generate-btn.active { background: var(--purple); color: #fff; }
+
+  .status-card { background: #f3f4f6; border-radius: 14px; padding: 14px 16px; }
+  .status-row { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: #374151; padding: 4px 0; }
+  .status-row .badge { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #fff; flex-shrink: 0; }
+  .status-row .badge.ok { background: var(--green); }
+  .status-row .badge.warn { background: var(--amber); }
+  .status-row .badge.wait { background: #c7c7d1; }
+
+  .words-line { font-size: 13px; color: var(--purple-dark); background: #f3f0fa; border-radius: 10px; padding: 8px 12px; margin-bottom: 10px; min-height: 18px; }
+  .back-btn { background: none; border: none; color: var(--gray); font-size: 13px; text-decoration: underline; cursor: pointer; margin-top: 8px; align-self: flex-start; }
+
+  /* Output screen */
+  .output-card { background: #f9f9fb; border-radius: 16px; padding: 18px; margin-bottom: 16px; }
+  .output-label { font-size: 12px; color: var(--gray); margin-bottom: 4px; display:flex; justify-content:space-between; align-items:center; }
+  .output-sentence { font-size: 20px; font-weight: 600; color: #1f2937; margin-bottom: 14px; }
+  .divider { border-top: 1px solid #e5e7eb; margin: 12px 0; }
+  .translation-text { font-size: 16px; color: var(--purple-dark); font-style: italic; }
+  .muted { color: #9ca3af; font-size: 14px; }
+
+  .action-row { display: flex; gap: 12px; margin-bottom: 14px; }
+  .action-btn { flex: 1; padding: 13px; border-radius: 14px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .action-btn.speak { background: #ece5ff; color: #6d5bd0; }
+  .action-btn.translate { background: #dbeafe; color: #1d4ed8; }
+  .start-over-btn { width: 100%; padding: 14px; border-radius: 14px; border: none; background: #ffe8d6; color: #c2560d; font-weight: 600; cursor: pointer; }
+
+  /* Popup */
+  .popup-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: flex-end; justify-content: center; z-index: 50; }
+  .popup-overlay.active { display: flex; }
+  .popup-sheet { background: #fff; width: 100%; max-width: 480px; border-radius: 20px 20px 0 0; padding: 22px; }
+  .popup-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .popup-sub { font-size: 13px; color: var(--gray); margin-bottom: 14px; }
+  .lang-option { display: flex; align-items: center; gap: 10px; padding: 10px 0; font-size: 14.5px; cursor: pointer; }
+  .lang-option input { accent-color: var(--purple); width: 17px; height: 17px; }
+  .popup-actions { display: flex; gap: 10px; margin-top: 14px; }
+  .popup-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; }
+  .popup-btn.cancel { background: #f3f4f6; color: #374151; }
+  .popup-btn.confirm { background: var(--purple); color: #fff; }
+  .popup-btn.danger { background: #ef4444; color: #fff; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SPLASH -->
+  <div id="splash" class="screen active">
+    <div class="logo-icon">🤟</div>
+    <div class="logo-title">Signa</div>
+    <div class="logo-sub">Where Signs Speak</div>
+    <div class="spinner"></div>
+  </div>
+
+  <!-- CAMERA SCREEN -->
+  <div id="camera-screen" class="screen">
+    <div class="topbar">
+      <div class="dot" id="homeDot" title="Back to camera"></div>
+      <div style="color:var(--gray);">⚙️</div>
+    </div>
+
+    <div class="words-line" id="wordsLine">No signs recognized yet</div>
+
+    <div class="camera-box" id="cameraBox">
+      <div class="camera-off-msg" id="cameraOffMsg">
+        <div class="icon">📷🚫</div>
+        <div>Camera is OFF</div>
+        <div style="font-size:13px; margin-top:4px;">Tap Start to begin</div>
+      </div>
+      <video id="video" playsinline autoplay muted style="display:none;"></video>
+      <div class="rec-badge" id="recBadge" style="display:none;"><div class="blink"></div> REC</div>
+    </div>
+
+    <button class="back-btn" id="btnBackWord" style="display:none;">↩ Undo last word</button>
+
+    <div class="controls">
+      <button class="ctrl-btn start" id="btnStart">▶<br>Start</button>
+      <button class="ctrl-btn pause" id="btnPause" disabled>⏸<br>Pause</button>
+      <button class="ctrl-btn stop" id="btnStop" disabled>⏹<br>Stop</button>
+    </div>
+
+    <button class="generate-btn" id="btnGenerate" disabled>Generate Sentence</button>
+
+    <div class="status-card" id="statusCard">
+      <div class="status-row"><span class="badge wait" id="badgeLight">•</span><span id="textLight">Lighting: waiting for camera…</span></div>
+      <div class="status-row"><span class="badge wait" id="badgeHand">•</span><span id="textHand">Hand: not detected</span></div>
+    </div>
+  </div>
+
+  <!-- OUTPUT SCREEN -->
+  <div id="output-screen" class="screen">
+    <div class="topbar">
+      <div class="dot" id="homeDot2" title="Back to camera"></div>
+      <div style="color:var(--gray);">⚙️</div>
+    </div>
+
+    <div class="output-card">
+      <div class="output-label">
+        <span>Original Sentence</span>
+      </div>
+      <div class="output-sentence" id="originalSentence">—</div>
+      <div class="divider"></div>
+      <div class="output-label">Translation</div>
+      <div class="translation-text muted" id="translationText">Not translated yet</div>
+    </div>
+
+    <div class="action-row">
+      <button class="action-btn speak" id="btnSpeak">🔊 Speak</button>
+      <button class="action-btn translate" id="btnTranslate">🌐 Translate</button>
+    </div>
+
+    <button class="start-over-btn" id="btnStartOver">↻ Start Over</button>
+  </div>
+
+</div>
+
+<!-- LANGUAGE POPUP (shared by Speak + Translate) -->
+<div class="popup-overlay" id="langPopup">
+  <div class="popup-sheet">
+    <div class="popup-title" id="popupTitle">Select a language</div>
+    <div class="popup-sub" id="popupSub">Choose a language</div>
+    <div id="langOptions">
+      <label class="lang-option"><input type="radio" name="lang" value="English" checked> English</label>
+      <label class="lang-option"><input type="radio" name="lang" value="Kannada"> Kannada</label>
+      <label class="lang-option"><input type="radio" name="lang" value="Hindi"> Hindi</label>
+      <label class="lang-option"><input type="radio" name="lang" value="Tamil"> Tamil</label>
+      <label class="lang-option"><input type="radio" name="lang" value="Telugu"> Telugu</label>
+      <label class="lang-option"><input type="radio" name="lang" value="Malayalam"> Malayalam</label>
+    </div>
+    <div class="popup-actions">
+      <button class="popup-btn cancel" id="langCancel">Cancel</button>
+      <button class="popup-btn confirm" id="langConfirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- START OVER CONFIRM POPUP -->
+<div class="popup-overlay" id="confirmPopup">
+  <div class="popup-sheet">
+    <div class="popup-title">Start New Input?</div>
+    <div class="popup-sub">The current recording and generated sentence will be cleared.</div>
+    <div class="popup-actions">
+      <button class="popup-btn cancel" id="confirmCancel">Cancel</button>
+      <button class="popup-btn danger" id="confirmYes">Yes, Start Over</button>
+    </div>
+  </div>
+</div>
+
+<audio id="audioPlayer" style="display:none;"></audio>
+
+<script>
+// ============================================================
+// CONFIG — change this if your backend runs somewhere other
+// than localhost:8000 (e.g. your machine's LAN IP for phone testing)
+// ============================================================
+const BACKEND_HOST = window.location.hostname || "localhost";
+const WS_URL = `ws://${BACKEND_HOST}:8000/ws`;
+const API_BASE = `http://${BACKEND_HOST}:8000`;
+
+const els = {
+  cameraOffMsg: document.getElementById("cameraOffMsg"),
+  recBadge: document.getElementById("recBadge"),
+  video: document.getElementById("video"),
+  btnStart: document.getElementById("btnStart"),
+  btnPause: document.getElementById("btnPause"),
+  btnStop: document.getElementById("btnStop"),
+  btnGenerate: document.getElementById("btnGenerate"),
+  btnBackWord: document.getElementById("btnBackWord"),
+  badgeLight: document.getElementById("badgeLight"),
+  textLight: document.getElementById("textLight"),
+  badgeHand: document.getElementById("badgeHand"),
+  textHand: document.getElementById("textHand"),
+  wordsLine: document.getElementById("wordsLine"),
+  originalSentence: document.getElementById("originalSentence"),
+  translationText: document.getElementById("translationText"),
+  btnSpeak: document.getElementById("btnSpeak"),
+  btnTranslate: document.getElementById("btnTranslate"),
+  btnStartOver: document.getElementById("btnStartOver"),
+  audioPlayer: document.getElementById("audioPlayer"),
+};
+
+let ws = null;
+let stream = null;
+let sendingFrames = false;
+let frameIntervalId = null;
+let currentWords = [];
+let currentSentence = "";
+let popupMode = null; // "speak" | "translate"
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+// ---- Splash ----
+window.addEventListener("load", () => {
+  connectWS();
+  setTimeout(() => showScreen("camera-screen"), 1200);
+});
+
+// ---- WebSocket ----
+function connectWS() {
+  ws = new WebSocket(WS_URL);
+  ws.onopen = () => console.log("WS connected");
+  ws.onclose = () => console.log("WS closed — retrying in 2s"), setTimeout(connectWS, 2000);
+  ws.onerror = (e) => console.error("WS error", e);
+  ws.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+    handleServerMessage(msg);
+  };
+}
+
+function handleServerMessage(msg) {
+  if (msg.type === "status") {
+    updateLightStatus(msg.lighting_good, msg.brightness);
+    updateHandStatus(msg.hand_detected);
+  } else if (msg.type === "prediction") {
+    currentWords = msg.buffer || currentWords;
+    els.wordsLine.textContent = currentWords.length ? currentWords.join(" ") : "No signs recognized yet";
+    els.btnGenerate.disabled = currentWords.length === 0;
+    els.btnGenerate.classList.toggle("active", currentWords.length > 0);
+    els.btnBackWord.style.display = currentWords.length ? "block" : "none";
+  } else if (msg.type === "sentence") {
+    currentSentence = msg.sentence || "(no words recognized)";
+    els.originalSentence.textContent = currentSentence;
+    els.translationText.textContent = "Not translated yet";
+    els.translationText.classList.add("muted");
+    showScreen("output-screen");
+  } else if (msg.type === "reset_ack") {
+    currentWords = [];
+    els.wordsLine.textContent = "No signs recognized yet";
+    els.btnGenerate.disabled = true;
+    els.btnGenerate.classList.remove("active");
+    els.btnBackWord.style.display = "none";
+  }
+}
+
+function updateLightStatus(good) {
+  els.badgeLight.className = "badge " + (good ? "ok" : "warn");
+  els.badgeLight.textContent = good ? "✓" : "!";
+  els.textLight.textContent = good ? "Lighting: Good" : "Poor lighting condition";
+}
+
+function updateHandStatus(detected) {
+  els.badgeHand.className = "badge " + (detected ? "ok" : "warn");
+  els.badgeHand.textContent = detected ? "✓" : "!";
+  els.textHand.textContent = detected ? "Hand: Detected" : "Adjust your hand position within the frame";
+}
+
+// ---- Camera controls ----
+els.btnStart.addEventListener("click", async () => {
+  if (!stream) {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+      els.video.srcObject = stream;
+      els.video.style.display = "block";
+      els.cameraOffMsg.style.display = "none";
+      await els.video.play();
+    } catch (e) {
+      alert("Could not access camera: " + e.message);
+      return;
+    }
+  }
+  els.recBadge.style.display = "flex";
+  els.btnStart.disabled = true;
+  els.btnPause.disabled = false;
+  els.btnStop.disabled = false;
+  startSendingFrames();
+});
+
+els.btnPause.addEventListener("click", () => {
+  stopSendingFrames();
+  els.btnPause.disabled = true;
+  els.btnStart.disabled = false;
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "pause" }));
+});
+
+els.btnStop.addEventListener("click", () => {
+  stopSendingFrames();
+  els.recBadge.style.display = "none";
+  els.btnStart.disabled = false;
+  els.btnPause.disabled = true;
+  els.btnStop.disabled = true;
+});
+
+els.btnGenerate.addEventListener("click", () => {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: "generate_sentence" }));
+  }
+});
+
+els.btnBackWord.addEventListener("click", () => {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: "back" }));
+  }
+});
+
+function startSendingFrames() {
+  sendingFrames = true;
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  frameIntervalId = setInterval(() => {
+    if (!sendingFrames || els.video.readyState < 2) return;
+    canvas.width = els.video.videoWidth || 320;
+    canvas.height = els.video.videoHeight || 240;
+    ctx.drawImage(els.video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.6);
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "frame", data: dataUrl }));
+    }
+  }, 150); // ~6-7 fps, enough for 20-frame sequence buffering without flooding the socket
+}
+
+function stopSendingFrames() {
+  sendingFrames = false;
+  if (frameIntervalId) clearInterval(frameIntervalId);
+}
+
+// ---- Start Over confirmation ----
+function openConfirmPopup() { document.getElementById("confirmPopup").classList.add("active"); }
+function closeConfirmPopup() { document.getElementById("confirmPopup").classList.remove("active"); }
+
+document.getElementById("homeDot").addEventListener("click", openConfirmPopup);
+document.getElementById("homeDot2").addEventListener("click", openConfirmPopup);
+document.getElementById("btnStartOver").addEventListener("click", openConfirmPopup);
+document.getElementById("confirmCancel").addEventListener("click", closeConfirmPopup);
+document.getElementById("confirmYes").addEventListener("click", () => {
+  closeConfirmPopup();
+  stopSendingFrames();
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "start_over" }));
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  els.video.style.display = "none";
+  els.cameraOffMsg.style.display = "block";
+  els.recBadge.style.display = "none";
+  els.btnStart.disabled = false;
+  els.btnPause.disabled = true;
+  els.btnStop.disabled = true;
+  currentSentence = "";
+  showScreen("camera-screen");
+});
+
+// ---- Speak / Translate popups ----
+function openLangPopup(mode) {
+  popupMode = mode;
+  document.getElementById("popupTitle").textContent = mode === "speak" ? "Speak in" : "Translate to";
+  document.getElementById("popupSub").textContent = "Select a language";
+  document.getElementById("langPopup").classList.add("active");
+}
+document.getElementById("btnSpeak").addEventListener("click", () => openLangPopup("speak"));
+document.getElementById("btnTranslate").addEventListener("click", () => openLangPopup("translate"));
+document.getElementById("langCancel").addEventListener("click", () => document.getElementById("langPopup").classList.remove("active"));
+
+document.getElementById("langConfirm").addEventListener("click", async () => {
+  const lang = document.querySelector('input[name="lang"]:checked').value;
+  document.getElementById("langPopup").classList.remove("active");
+
+  if (popupMode === "speak") {
+    await doSpeak(currentSentence, lang);
+  } else {
+    await doTranslate(currentSentence, lang);
+  }
+});
+
+const LANG_CODES = { English: "en", Kannada: "kn", Hindi: "hi", Tamil: "ta", Telugu: "te", Malayalam: "ml" };
+
+async function doSpeak(text, language) {
+  try {
+    const res = await fetch(`${API_BASE}/speak`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, lang: LANG_CODES[language] || "en" }),
+    });
+    if (!res.ok) throw new Error("Speak request failed: " + res.status);
+    const blob = await res.blob();
+    els.audioPlayer.src = URL.createObjectURL(blob);
+    els.audioPlayer.play();
+  } catch (e) {
+    alert("Speak failed: " + e.message);
+  }
+}
+
+async function doTranslate(text, language) {
+  try {
+    const res = await fetch(`${API_BASE}/translate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, language }),
+    });
+    if (!res.ok) throw new Error("Translate request failed: " + res.status);
+    const data = await res.json();
+    els.translationText.textContent = `(${language}) ${data.translated_text}`;
+    els.translationText.classList.remove("muted");
+  } catch (e) {
+    alert("Translate failed: " + e.message);
+  }
+}
+</script>
+</body>
+</html>
