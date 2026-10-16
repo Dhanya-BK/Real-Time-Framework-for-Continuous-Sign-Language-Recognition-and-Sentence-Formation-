@@ -73,3 +73,10 @@ Applications
 - Public service accessibility
 - Healthcare communication
 - Smart assistive technologies
+
+Authors
+------------
+Akshaya Shankari B
+Dhanya B K
+Sharanya Rai K
+Srijanya S R
