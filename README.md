@@ -174,7 +174,8 @@ The full list is in [`backend/labels.py`](backend/labels.py).
 
 | Name | GitHub |
 |---|---|
-| Dhanya BK | [@Dhanya-BK](https://github.com/Dhanya-BK) |
+| Akshaya Shankari B | [@AkshayaShankariB](https://github.com/AkshayaShankariB) |
+| Dhanya B K | [@Dhanya-BK](https://github.com/Dhanya-BK) |
 | Sharanya Rai K | [@Sharanya185](https://github.com/Sharanya185) |
 | Srijanya S R | [@Srijanya25](https://github.com/Srijanya25) |
 
