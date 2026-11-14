@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+websockets
+pydantic
+numpy
+opencv-python
+mediapipe
+tensorflow
+h5py
+scikit-learn
+python-dotenv
+groq
+gTTS
+edge-tts
+deep-translator
+requests
+playsound==1.2.2

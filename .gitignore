@@ -1,0 +1,12 @@
+.env
+*.env
+!.env.example
+__pycache__/
+*.pyc
+node_modules/
+dist/
+backend/logs/
+*.mp3
+.vscode/
+other/*
+!other/MAJOR_PROJECT_FINAL_REPORT.pdf
