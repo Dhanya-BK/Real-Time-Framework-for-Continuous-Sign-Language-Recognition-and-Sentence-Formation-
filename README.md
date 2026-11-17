@@ -164,11 +164,7 @@ python train.py               # train and save gesture_model.h5
 
 The full list is in [`backend/labels.py`](backend/labels.py).
 
-## 🔧 Troubleshooting
 
-- **Model won't load with a `batch_shape` error:** run `python fix_model.py` once inside `backend/`.
-- **Camera not starting:** close other apps that use the webcam and refresh the page.
-- **Low accuracy:** use good lighting and keep your hands fully inside the frame.
 
 ## 👥 Team
 
